@@ -2,3 +2,6 @@
 - Extract_columns.ipynb - imports all other years data and desired columns
 - Final_raw_data.ipynb - refines data and exports
 - Missing_Values_EDA.ipynb - handles missing data and basic correlation and distribution plots
+- Prelim_models.ipynb - first attempt to run simple models - Not working...
+- models_test.py - run data through more complex models - GridSearchCV, validation set
+- impute_mlp.py - function to use MLP to predict and impute missing values in the data - not working on multi-class features
