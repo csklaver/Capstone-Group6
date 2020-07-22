@@ -11,19 +11,6 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.model_selection import GridSearchCV, KFold
-
-
-
-# %% --------------------------------------- Set-Up --------------------------------------------------------------------
-import pandas as pd
-
-path = ('/Users/carolinesklaver/Desktop/Capstone/NHANES/data/csv_data/')
-
-import os
-os.chdir(path)
-
-SEED = 42
-
 import pandas as pd
 import numpy as np
 import math
@@ -32,6 +19,10 @@ path = ('/Users/carolinesklaver/Desktop/Capstone/NHANES/data/csv_data/')
 
 import os
 os.chdir(path)
+
+SEED = 42
+# %% --------------------------------------- Load data --------------------------------------------------------------------
+
 
 #continuous features
 cont = ['#_ppl_household', 'age', 'triglyceride','caffeine', 'lifetime_partners',
@@ -66,35 +57,29 @@ dep = df_raw.pop('depressed')
 df_raw.insert(2, 'depressed', dep)
 
 
-
 # drop marijuana use
 df_raw.drop(['used_marijuana'],axis=1, inplace=True)
 # drop year?
 df_raw.drop(['year'],axis=1, inplace=True)
 
 
-# ---------------------------- Read in Data ------------------------
-# read in data
-# not encoded
+# ---------------------------- Read in or Create Imputed Data -----------------------------
+# FOR MLP/KNN IMPUTED DATA
 df_mlp_impute = pd.read_csv('df_progressive_mlp_2.csv')
 df_mlp_impute.drop(['year'],axis=1, inplace=True)
 # df_knn_impute = pd.read_csv('df_progressive_knn_2.csv')
 # df_knn_impute.drop(['year'],axis=1, inplace=True)
 
-# from nan_helper import nan_helper
-# from mean_median_imputation import missing_values
+# FOR MEAN/MEDIAN IMPUTED DATA
+from nan_helper import nan_helper
+from mean_median_imputation import missing_values
 #
-# nan_df = nan_helper(df_raw)
-# df_mean_50 = missing_values(df_raw, 0.50,0.50, 'mean')
-# df_mean_50.drop(['SEQN'],axis=1, inplace=True)
-# # encoded MLP imputed
-# df_updated =  pd.read_csv('updated_train.csv')
-#
-# # encoded KNN imputed
-# df_updated =  pd.read_csv('updated_train_knn.csv')
+#nan_df = nan_helper(df_raw)
+#df_mean_50 = missing_values(df_raw, 0.50,0.50, 'mean')
 
-# encoded mean imputed
-# df_updated =  pd.read_csv('updated_train_mean.csv')
+
+
+# ---------------------------- Split, Encode, & Standardize --------------------------------
 
 from sklearn.model_selection import train_test_split
 
@@ -112,7 +97,7 @@ df = one_hot_encode(df_mlp_impute)
 features = np.setdiff1d(df.columns, [target])
 
 # divide into training and testing
-df_raw_train, df_raw_test = train_test_split(df, test_size=0.2, random_state=SEED)
+df_raw_train, df_raw_test = train_test_split(df, test_size=0.3, random_state=SEED)
 # Reset the index
 df_raw_train, df_raw_test = df_raw_train.reset_index(drop=True), df_raw_test.reset_index(drop=True)
 
@@ -121,6 +106,7 @@ df_train = df_raw_train.copy(deep=True)
 # Make a copy of df_raw_test
 df_test = df_raw_test.copy(deep=True)
 
+# get feautre matrix
 train_inputs = df_train[features]
 test_inputs = df_test[features]
 train_target = df_train[target]
@@ -139,13 +125,7 @@ def ROS(features, target):
     X_train_ros, y_train_ros = ros.fit_sample(features, target)
     print(X_train_ros.shape[0] - features.shape[0], 'new random picked points')
     return X_train_ros, y_train_ros
-#
-# X_train_ros = pd.DataFrame(X_train_ros)
-# X_train_ros.columns = train_df.keys().tolist()
-# y_train_ros = pd.DataFrame(y_train_ros, columns=['depressed'])
-#
-#
-# print(y_train_ros.depressed.value_counts())
+
 
 # -------------------- Random Under-Sampling ---------------
 # import imblearn
@@ -156,11 +136,8 @@ def RUS(features, target):
     X_train_rus, y_train_rus = rus.fit_sample(features, target)
     print(X_train_rus.shape[0] - features.shape[0], 'randomly picked points')
 
-# X_train_rus = pd.DataFrame(X_train_rus)
-# X_train_rus.columns = train_df.keys().tolist()
     y_train_rus_df = pd.DataFrame(y_train_rus, columns=['depressed'])
-#
-#
+
     print(y_train_rus_df.depressed.value_counts())
     return X_train_rus, y_train_rus
 
@@ -172,10 +149,7 @@ smote = SMOTE(random_state=SEED, sampling_strategy='minority')
 
 def smote_os(features, target):
     X_train_sm, y_train_sm = smote.fit_sample(features, target)
-# X_train_sm = pd.DataFrame(X_train_sm)
-# X_train_sm.columns = train_df.keys().tolist()
     y_train_sm_df = pd.DataFrame(y_train_sm, columns=['depressed'])
-# print('smote training df', X_train_sm.head())
     print('smote value counts:', y_train_sm_df.depressed.value_counts())
     return X_train_sm, y_train_sm
 #
@@ -188,37 +162,107 @@ from imblearn.combine import SMOTETomek
 smt = SMOTETomek(random_state=SEED)
 def sm_tomek(features, target):
     X_train_smt, y_train_smt = smt.fit_sample(features, target)
-
     print(X_train_smt.shape[0] - features.shape[0], 'new random picked points')
-
     y_smt = pd.DataFrame(y_train_smt, columns=['depressed'])
-
 
     print(y_smt.depressed.value_counts())
     return X_train_smt, y_train_smt
+
+
+# ------------------------------- function for resampling technique ------------------------------
+
+def resample(inputs, targets, resample_method=None):
+    """
+    Resample
+
+    Parameters
+    ----------
+    data: inputs, targets
+    resample_method: type of resampling technique specified
+
+    Returns
+    ----------
+    resampled inputs and targets
+
+    """
+    if resample_method=='ROS':
+        r_inputs, r_targets = ROS(inputs, targets)
+    elif resample_method=='RUS':
+        r_inputs, r_targets = RUS(inputs, targets)
+    elif resample_method=='SMOTE':
+        r_inputs, r_targets = smote_os(inputs, targets)
+    elif resample_method=='SMOTETomek':
+        r_inputs, r_targets = sm_tomek(inputs, targets)
+    elif resample_method==None:
+        r_inputs, r_targets = inputs, targets
+
+    return r_inputs, r_targets
+
 
 # %% -------------------------------------- Keras Model --------------------------------------------------------------
 import keras
 from keras import layers
 from sklearn.model_selection import KFold
 import numpy as np
-num_folds = 20
 import keras.backend as K
 K.clear_session()
 tf.config.experimental.set_visible_devices([], 'GPU')
 
+num_folds = 5
+EPOCHS = 25
+BATCH_SIZE = 32
+METRICS = ['accuracy', keras.metrics.Precision(name='precision'),
+                                        keras.metrics.Recall(name='recall'),
+                                        keras.metrics.AUC(name='AUC'),
+                                        keras.metrics.TruePositives(name='TP'),
+                                        keras.metrics.FalsePositives(name='FP'),
+                                        keras.metrics.TrueNegatives(name='TN'),
+                                        keras.metrics.FalseNegatives(name='FN')]
+
+
+def keras_model():
+
+    # Define the model architecture
+    model = keras.Sequential()
+
+    model.add(layers.Dense(50, activation='relu' , input_dim=input_dim))
+    model.add(Dropout(0.2))
+    model.add(layers.Dense(200, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(layers.Dense(400, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(layers.Dense(800, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(layers.Dense(1500, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(layers.Dense(3000, activation='relu'))
+    model.add(Dropout(0.2))
+    # model.add(layers.Dense(50, activation='relu'))
+    # model.add(Dropout(0.2))
+    # model.add(layers.Dense(3000, activation='relu'))
+    model.add(layers.Dense(1, activation='sigmoid'))
+
+    print(model.summary())
+
+    return model
+
+
+
 train_inputs.astype('float32')
 test_inputs.astype('float32')
 
-# scale the features
+# scale the continuous features
 from sklearn.preprocessing import StandardScaler
 ss = StandardScaler()
-train_inputs[cont] = ss.fit_transform(train_inputs[cont])
-test_inputs[cont] = ss.transform(test_inputs[cont])
+cont_ss = []
+for var in cont:
+    if var in train_inputs.columns:
+        cont_ss.append(var)
 
+train_inputs[cont_ss] = ss.fit_transform(train_inputs[cont_ss])
+test_inputs[cont_ss] = ss.transform(test_inputs[cont_ss])
 
-
-# Define per-fold score containers <-- these are new
+# Define per-fold score containers
 acc_per_fold = []
 loss_per_fold = []
 prec_per_fold = []
@@ -233,17 +277,46 @@ AUC_per_fold = []
 inputs = np.concatenate((train_inputs, test_inputs), axis=0)
 targets = np.concatenate((train_target, test_target), axis=0)
 
-#
-METRICS = [
-    keras.metrics.BinaryAccuracy(name='Accuracy'),
-    keras.metrics.Precision(name='Precision'),
-    keras.metrics.Recall(name='Recall'),
-    keras.metrics.AUC(name='AUC'),
-    keras.metrics.TruePositives(name='True Positives'),
-    keras.metrics.FalsePositives(name='False Positives'),
-    keras.metrics.TrueNegatives(name='True Negatives'),
-    keras.metrics.FalseNegatives(name='False Negatives'),
-]
+# get input dim for first layer
+input_dim = train_inputs.shape[1]
+
+# --------------------------------------- Kfold CV ---------------------------------------
+from keras.callbacks import LearningRateScheduler
+
+
+def step_decay_schedule(initial_lr=1e-3, decay_factor=0.75, step_size=10):
+    '''
+    Wrapper function to create a LearningRateScheduler with step decay schedule.
+    '''
+
+    def schedule(epoch):
+        return initial_lr * (decay_factor ** np.floor(epoch / step_size))
+
+    return LearningRateScheduler(schedule)
+
+from matplotlib import pyplot as plt
+def acc_loss_plots(hist):
+    # list all data in history
+    print(hist.history.keys())
+    # summarize history for accuracy
+    plt.plot(hist.history['accuracy'])
+    plt.plot(hist.history['val_accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(hist.history['loss'])
+    plt.plot(hist.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.show()
+
+
+
 
 # Define the K-fold Cross Validator
 kfold = KFold(n_splits=num_folds, shuffle=True)
@@ -252,19 +325,14 @@ kfold = KFold(n_splits=num_folds, shuffle=True)
 fold_no = 1
 for train, test in kfold.split(inputs, targets):
 
-    # Define the model architecture
-    model = keras.Sequential()
+    inputs_train, inputs_val, \
+    targets_train, targets_val = train_test_split(inputs[train],targets[train],
+                                                  test_size=0.3, random_state=SEED,
+                                                  stratify=targets[train])
 
-    model.add(layers.Dense(64, activation='tanh' , input_dim=84))
-    model.add(Dropout(0.5))
-    model.add(layers.Dense(64, activation='tanh'))
-    model.add(Dropout(0.5))
-    model.add(layers.Dense(1, activation='sigmoid'))
+    model = keras_model()
 
-    class_weights = {1:14,
-                    0:1}
-
-    opt = keras.optimizers.rmsprop(learning_rate=0.0001)
+    opt = keras.optimizers.rmsprop(learning_rate=1e-4)
 
     model.compile(loss='binary_crossentropy',
                   optimizer=opt,metrics=['accuracy', keras.metrics.Precision(name='precision'),
@@ -273,25 +341,27 @@ for train, test in kfold.split(inputs, targets):
                                         keras.metrics.TruePositives(name='TP'),
                                         keras.metrics.FalsePositives(name='FP'),
                                         keras.metrics.TrueNegatives(name='TN'),
-                                        keras.metrics.FalseNegatives(name='FN'),])
+                                        keras.metrics.FalseNegatives(name='FN')])
 
     # Generate a print
     print('------------------------------------------------------------------------')
     print(f'Training for fold {fold_no} ...')
 
-    # RESAMPLING Training set
-    train_ros_inputs, train_ros_targets = ROS(inputs[train], targets[train])
-    #train_smote_inputs, train_smote_targets = smote_os(inputs[train], targets[train])
-    #train_rus_inputs, train_rus_targets = RUS(inputs[train], targets[train])
-    #train_smt_inputs, train_smt_targets = sm_tomek(inputs[train], targets[train])
+    # RESAMPLING Training set - call resample()
+    features, target = resample(inputs_train, targets_train)
 
+
+    #lr_sched = step_decay_schedule(initial_lr=1e-4, decay_factor=0.75, step_size=2)
+
+    class_weights = {1:6, 0:1}
     # Fit data to model
-    history = model.fit(train_ros_inputs, train_ros_targets,
-                        batch_size=32,
-                        epochs=20, verbose=0)
+    history = model.fit(features, target, #callbacks=[lr_sched],
+                        batch_size=BATCH_SIZE, validation_data=(inputs_val, targets_val),
+                        epochs=10, verbose=0)
+
 
     # Generate generalization metrics
-    scores = model.evaluate(inputs[test], targets[test], verbose=0)
+    scores = model.evaluate(inputs[test], targets[test], verbose=1)
 
     print(
         f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; '
@@ -299,6 +369,7 @@ for train, test in kfold.split(inputs, targets):
         f' {model.metrics_names[3]} of {scores[3]}; {model.metrics_names[4]} of {scores[4]};'
         f' {model.metrics_names[5]} - {scores[5]}; {model.metrics_names[6]} - {scores[6]};'
         f' {model.metrics_names[7]} - {scores[7]}; {model.metrics_names[8]} - {scores[8]};')
+
     acc_per_fold.append(scores[1] * 100)
     loss_per_fold.append(scores[0])
     prec_per_fold.append(scores[2])
@@ -308,6 +379,12 @@ for train, test in kfold.split(inputs, targets):
     FP_per_fold.append(scores[6])
     TN_per_fold.append(scores[7])
     FN_per_fold.append(scores[8])
+
+
+    if fold_no==1:
+        # plot the accuracy and loss for training/val by epoch
+        acc_loss_plots(history)
+
 
     # Increase fold number
     fold_no = fold_no + 1
