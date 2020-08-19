@@ -1,1 +1,1 @@
-Run import files for each year in any order. Then run extended_raw_data.ipynb to clean and merge all years of data. Final NHANES dataframe with 112 features should be exported as 'df_raw_ext.csv'
+Run import files for year in any order to extract and rename all features downloaded from NHANES. Then run extended_raw_data.ipynb to clean and merge all years of data. Final NHANES dataframe will exported named 'df_raw_ext.csv'
