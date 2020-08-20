@@ -3,12 +3,13 @@ To download all data from [NHANES website](https://wwwn.cdc.gov/nchs/nhanes/) th
 ### Feature importing folder
 Includes all .ipynb files for importing features from each year, and an .ipynb file to pre-process and export the merged final dataframe ('data_raw_ext.cvs')
 ### Missing Value Imputation
-Statistical_ML_Imputations.ipynb imputes missing values using mean, median, progressive MLP and progressive KNN and exports imputed dataframes
+Statistical_ML_Imputations.ipynb imputes missing values using mean, median, progressive MLP and progressive KNN and exports imputed dataframes. Should be ran prior to the feature engineering and DNN below.
 ### Feature Engineering & Deep Neural Networks
 - Feature_engineering_models-KNN.ipynb
 - Feature_engineering_models-MLP.ipynb
 - Feature_engineering_models-MEAN.ipynb
 - Feature_engineering_models-MEDIAN.ipynb
+
 These notebooks contain the deep artificial neural network and convolutional neural network with each feature engineering method for each imputation type.
 
 #### Extra analysis
