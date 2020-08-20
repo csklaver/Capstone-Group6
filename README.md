@@ -14,4 +14,6 @@ Please see README.md file for instruction on implementation of code. This folder
 ### Data
 Original data with a fewer amount of features is titled 'df_raw_v2'. Data with an extendend number of NHANES features is titled 'df_raw_ext', and is used for the majority of analysis.
 
+This folder also contains a file with all output results.
+
 
