@@ -1,7 +1,7 @@
 ## Code Overview
 To download all data from [NHANES website](https://wwwn.cdc.gov/nchs/nhanes/) the python scripts in this [NHANES-Downloader](https://github.com/mrwyattii/NHANES-Downloader) were ran.
 ### Feature importing folder
-Includes .ipynb files for importing features from each year of NHANES data. Importing should be run before extended_raw_data.ipynb file which merge,s pre-processes, and exports the final dataframe ('df_raw_ext.cvs')
+Includes .ipynb files for importing features from each year of NHANES data. Importing should be run before extended_raw_data.ipynb file which merges, pre-processes, and exports the final dataframe ('df_raw_ext.cvs')
 
 ### Missing Value Imputation
 Statistical_ML_Imputations.ipynb imputes missing values using mean, median, progressive MLP and progressive KNN and exports imputed dataframes. Should be ran prior to the feature engineering and DNN below.
@@ -15,7 +15,8 @@ Statistical_ML_Imputations.ipynb imputes missing values using mean, median, prog
 
 These notebooks contain the deep artificial neural network and convolutional neural network with each feature engineering method for each imputation type.
 
-#### Extra analysis
+#### Supplementary analysis
+These files are non-essential, but provide more insight to the project
 - nan_helper.py - helper function to get proportion of missing values in each column of dataframe
 - Preliminary_ML_Analysis.ipynb - runs Logistic Regression, Naive Bayes, DTs, RF, XGBoost, Perceptron, and MLP on original data with each imputation type
 - keras_resampling.py - testing outcomes of Random Oversampling, Random Undersampling, and SMOTE on original data with each imputation type
