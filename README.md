@@ -12,8 +12,8 @@ This project explores missing value imputation methods, resampling techniques, f
 Please see README.md file for instruction on implementation of code. This folder incldues all extraction, pre-processing, imputation, and modeling methods.
 
 ### Data
-Original data with a fewer amount of features is titled 'df_raw_v2'. Data with an extendend number of NHANES features is titled 'df_raw_ext', and is used for the majority of analysis.
+Original data with a fewer amount of features is titled 'df_raw_v2'. Data with an extendend number of NHANES features is titled 'df_raw_ext', is created within the Feature_Importing folder within the Code folder. It is used for the majority of analysis.
 
-This folder also contains a file with all output results.
+This Data folder also contains a file with all output results.
 
 
